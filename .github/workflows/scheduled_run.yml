@@ -1,0 +1,30 @@
+# A typical layout inside scheduled_run.yml
+name: Scheduled Job Market Sync
+
+on:
+  schedule:
+    # 🕒 Runs every day at midnight (UTC) automatically
+    - cron: '0 0 * * *' 
+  workflow_dispatch: # Allows you to also click "Run manually" on GitHub
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Execute Live Ingestion Pipeline
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: python run_sync.py
