@@ -4,7 +4,7 @@ from typing import List, Dict, Any, Optional
 
 logger = logging.getLogger("TalentRadar.Database")
 
-# Rich seeded job records for instant live deployment on Streamlit Cloud & local runs
+# Seeded job records with direct application URLs
 DEFAULT_SEED_JOBS: List[Dict[str, Any]] = [
     {
         "id": "job_001",
@@ -17,6 +17,7 @@ DEFAULT_SEED_JOBS: List[Dict[str, Any]] = [
         "data_tools": ["pgvector", "PostgreSQL", "GitHub Actions", "Docker"],
         "experience_level": "Fresher (0-1 yrs)",
         "raw_description": "Bridge the gap between AI models and production web services. Build automated ETL pipelines, maintain pgvector vector indexes, optimize prompt routing, and develop low-latency FastAPI microservices.",
+        "apply_url": "https://pexcera.com/careers/ai-data-pipelines-engineer-fresher#apply",
         "similarity_score": 0.96
     },
     {
@@ -30,6 +31,7 @@ DEFAULT_SEED_JOBS: List[Dict[str, Any]] = [
         "data_tools": ["Qdrant", "PostgreSQL", "GitHub Actions", "Kubernetes"],
         "experience_level": "Mid-Senior (2-4 yrs)",
         "raw_description": "Build scalable RAG architectures, orchestrate LangChain/CrewAI multi-agent swarms, and benchmark LLM latency, throughput, and token costs across vLLM and Groq clusters.",
+        "apply_url": "https://www.linkedin.com/jobs/search/?keywords=Generative+AI+Engineer",
         "similarity_score": 0.89
     },
     {
@@ -43,6 +45,7 @@ DEFAULT_SEED_JOBS: List[Dict[str, Any]] = [
         "data_tools": ["pgvector", "Pinecone", "PostgreSQL", "Apache Airflow"],
         "experience_level": "Mid-Level (1-3 yrs)",
         "raw_description": "Design high-throughput streaming data pipelines, deploy Dockerized FastAPI endpoints, and manage vector database indexing with pgvector and Pinecone for real-time semantic search.",
+        "apply_url": "https://wellfound.com/jobs",
         "similarity_score": 0.87
     },
     {
@@ -56,6 +59,7 @@ DEFAULT_SEED_JOBS: List[Dict[str, Any]] = [
         "data_tools": ["PostgreSQL", "Supabase", "BigQuery", "GitHub Actions"],
         "experience_level": "Fresher / Junior (0-2 yrs)",
         "raw_description": "Develop Python FastAPI microservices and Streamlit UI. Manage automated data cleaning pipelines and LLM evaluation benchmarks for prompt accuracy and hallucination reduction.",
+        "apply_url": "https://www.ycombinator.com/jobs",
         "similarity_score": 0.82
     },
     {
@@ -69,6 +73,7 @@ DEFAULT_SEED_JOBS: List[Dict[str, Any]] = [
         "data_tools": ["MySQL", "PostgreSQL", "Power BI (PL-300)", "Excel"],
         "experience_level": "Entry Level (0-1 yrs)",
         "raw_description": "Build executive KPI dashboards in Power BI and Tableau. Perform data quality validation, preprocessing, and reporting across multi-source enterprise SQL databases.",
+        "apply_url": "https://www.se.com/in/en/about-us/careers/overview.jsp",
         "similarity_score": 0.76
     },
     {
@@ -82,6 +87,7 @@ DEFAULT_SEED_JOBS: List[Dict[str, Any]] = [
         "data_tools": ["BigQuery", "DuckDB", "PostgreSQL", "Streamlit"],
         "experience_level": "Junior-Mid (1-3 yrs)",
         "raw_description": "Design automated billing telemetry ingestion pipelines, write SQL models for idle compute anomaly detection, and deploy Streamlit analytics dashboards for cost optimization.",
+        "apply_url": "https://www.finops.org/",
         "similarity_score": 0.74
     }
 ]

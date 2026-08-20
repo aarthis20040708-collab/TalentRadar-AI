@@ -24,13 +24,14 @@ st.markdown("""
     .metric-card {
         background-color: #111827;
         border: 1px solid #1f2937;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 16px;
-        transition: transform 0.2s;
+        border-radius: 12px;
+        padding: 22px;
+        margin-bottom: 18px;
+        transition: transform 0.2s, border-color 0.2s;
     }
     .metric-card:hover {
         border-color: #38bdf8;
+        box-shadow: 0 4px 20px rgba(56, 189, 248, 0.15);
     }
     .badge {
         background-color: #1f2937;
@@ -42,15 +43,32 @@ st.markdown("""
         margin-right: 6px;
         display: inline-block;
         margin-bottom: 4px;
+        border: 1px solid rgba(56, 189, 248, 0.2);
     }
     .match-tag {
         background-color: rgba(6, 214, 160, 0.15);
         color: #06d6a0;
         border: 1px solid rgba(6, 214, 160, 0.3);
-        padding: 3px 10px;
+        padding: 4px 12px;
         border-radius: 12px;
         font-weight: bold;
         font-size: 13px;
+    }
+    .apply-btn {
+        background: linear-gradient(135deg, #06d6a0, #38bdf8);
+        color: #080c14 !important;
+        font-weight: 700;
+        text-decoration: none !important;
+        padding: 8px 20px;
+        border-radius: 6px;
+        display: inline-block;
+        font-size: 13px;
+        transition: transform 0.2s, opacity 0.2s;
+    }
+    .apply-btn:hover {
+        transform: translateY(-2px);
+        opacity: 0.92;
+        color: #080c14 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -101,11 +119,11 @@ with c4:
 
 st.divider()
 
-tab1, tab2, tab3 = st.tabs(["🔍 Semantic Search & RAG", "📊 Labor Market & Salary Insights", "🏗️ Microservice Architecture"])
+tab1, tab2, tab3 = st.tabs(["🔍 Semantic Search & Direct Application", "📊 Labor Market & Salary Insights", "🏗️ Microservice Architecture"])
 
 with tab1:
     st.subheader("Dense Vector Semantic Search")
-    st.write("Match candidate queries and skill descriptions against unstructured job requirements using vector similarity.")
+    st.write("Search tech opportunities by target skills, frameworks, or job descriptions. Click **Apply for this Role** on any card to open the official application portal.")
     
     col_q, col_k = st.columns([3, 1])
     with col_q:
@@ -119,6 +137,8 @@ with tab1:
             
             for item in results:
                 score_pct = item.get("similarity_score", 0.0) * 100
+                apply_link = item.get("apply_url", "https://pexcera.com/careers/ai-data-pipelines-engineer-fresher#apply")
+                
                 st.markdown(f"""
                 <div class="metric-card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
@@ -126,10 +146,16 @@ with tab1:
                         <span class="match-tag">🎯 {score_pct:.1f}% Match</span>
                     </div>
                     <p style="color:#9ca3af; margin-bottom:12px;"><b>📍 Location:</b> {item.get('location', 'Remote')} | <b>💰 Compensation:</b> {item.get('salary_range', 'Competitive')} | <b>🎓 Experience:</b> {item.get('experience_level', 'Fresher')}</p>
-                    <p style="color:#d1d5db; font-size:14px; margin-bottom:14px;">{item.get('raw_description', '')}</p>
-                    <div>
+                    <p style="color:#d1d5db; font-size:14px; margin-bottom:14px; line-height:1.6;">{item.get('raw_description', '')}</p>
+                    <div style="margin-bottom:16px;">
                         <b>🛠️ Extracted Skills:</b><br/>
                         {' '.join([f'<span class="badge">{s}</span>' for s in item.get('skills', [])])}
+                    </div>
+                    <div style="display:flex; justify-content:space-between; align-items:center; padding-top:12px; border-top:1px solid #1f2937;">
+                        <a href="{apply_link}" target="_blank" class="apply-btn">
+                            🚀 Apply for this Role &rarr;
+                        </a>
+                        <span style="color:#64748b; font-size:12px; font-family:monospace;">Source: Live Career Portal</span>
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
@@ -143,12 +169,17 @@ with tab2:
         for j in jobs:
             all_skills.extend(j.get("skills", []))
         if all_skills:
-            skill_df = pd.Series(all_skills).value_counts().reset_index()
-            skill_df.columns = ["Technology / Skill", "Job Listings Count"]
+            counts = pd.Series(all_skills).value_counts()
+            skill_df = pd.DataFrame({"Technology / Skill": counts.index, "Job Listings Count": counts.values})
             st.bar_chart(skill_df.set_index("Technology / Skill"))
     
     with col_b:
-        sal_data = [{"Title": j["title"], "Salary (USD/yr)": j.get("salary_numeric", 85000)} for j in jobs]
+        sal_data = [{
+            "Title": j["title"],
+            "Company": j["company"],
+            "Salary (USD/yr)": j.get("salary_numeric", 85000),
+            "Apply URL": j.get("apply_url", "https://pexcera.com/careers/ai-data-pipelines-engineer-fresher#apply")
+        } for j in jobs]
         sal_df = pd.DataFrame(sal_data)
         st.dataframe(sal_df, use_container_width=True)
 
