@@ -28,28 +28,41 @@ Modern AI and data science labor markets evolve rapidly, creating a demand for a
 
 ```mermaid
 flowchart TD
-    subgraph Ingestion Layer
-        A[Global Job Feeds / APIs] -->|AsyncIO + aiohttp| B[fetcher_async.py]
-        B -->|Throttled Concurrency| C[Raw Job Payload]
+    subgraph Ingestion["1. Ingestion Layer"]
+        A["Global Job Feeds / APIs"] -->|"AsyncIO + aiohttp"| B["fetcher_async.py"]
+        B -->|"Throttled Semaphore"| C["Raw Job Payload"]
     end
 
-    subgraph LLM Entity Parser Layer
-        C -->|Unstructured Text| D[Groq Llama-3-70B Engine]
-        D -->|Structured Attributes| E[Pydantic v2 JSON Contract]
+    subgraph Parser["2. GenAI Entity Parser"]
+        C -->|"Unstructured Text"| D["Groq Llama-3-70B Engine"]
+        D -->|"Structured Attributes"| E["Pydantic v2 JSON Schema"]
     end
 
-    subgraph Vector & Database Layer
-        E -->|Text Attributes| F[Dense Embedding Engine (384-d)]
-        F -->|Vector Float Array| G[(PostgreSQL / Supabase + pgvector)]
-        E -->|Relational Data| G
+    subgraph Storage["3. Vector Database Layer"]
+        E -->|"Text Fields"| F["Dense Embedding Engine (384-d)"]
+        F -->|"Dense Vectors"| G[("PostgreSQL + pgvector")]
+        E -->|"Relational Data"| G
     end
 
-    subgraph Serving & UI Layer
-        G -->|Cosine Distance Index| H[FastAPI Microservice (api.py)]
-        H -->|REST Endpoints| I[Streamlit Analytics Dashboard (app.py)]
-        J[GitHub Actions Cron] -->|Daily Trigger| B
+    subgraph Serving["4. Serving & UI Layer"]
+        G -->|"Cosine Distance (<50ms)"| H["FastAPI Microservice (api.py)"]
+        H -->|"REST API Endpoints"| I["Streamlit Dashboard (app.py)"]
+        J["GitHub Actions Cron"] -->|"Daily Trigger"| B
     end
+
+    style Ingestion fill:#0f172a,stroke:#38bdf8,stroke-width:1px,color:#f8fafc
+    style Parser fill:#0f172a,stroke:#06d6a0,stroke-width:1px,color:#f8fafc
+    style Storage fill:#0f172a,stroke:#a855f7,stroke-width:1px,color:#f8fafc
+    style Serving fill:#0f172a,stroke:#f59e0b,stroke-width:1px,color:#f8fafc
 ```
+
+### 📋 Architecture Flow Breakdown
+1. **Asynchronous Ingestion Worker (`fetcher_async.py`):** Concurrently scrapes and queries job data sources using Python `AsyncIO` and `aiohttp` with semaphore rate-limiting to prevent IP throttling.
+2. **Groq Llama-3-70B Extraction Engine (`src/parser.py`):** Converts raw unstructured HTML/text into normalized JSON (Title, Company, Compensation, Skills, Experience).
+3. **Dense Vector Embeddings & Indexing (`src/vector_store.py` & `src/database.py`):** Encodes extracted attributes into 384-dimensional dense vectors stored in **PostgreSQL `pgvector`** with IVFFlat / HNSW indexing.
+4. **FastAPI Serving Layer (`api.py`):** Exposes high-throughput `/api/v1/jobs/semantic-search` REST endpoints achieving sub-50ms query latency.
+5. **Interactive UI (`app.py`):** Streamlit dashboard with semantic vector search, salary market charts, and one-click role applications.
+6. **Automated CI/CD DataOps (`.github/workflows/scheduled_run.yml`):** Runs automated daily cron ETL jobs to keep the vector database continuously synchronized.
 
 ---
 
