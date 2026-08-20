@@ -1,4 +1,4 @@
 {
-  "summary": "AI entity extraction and skill normalization parser using Groq LLM API",
-  "updatedAt": "2026-08-20T07:26:31.873211500Z"
+  "summary": "TalentRadar parser reading key from env without hardcoding",
+  "updatedAt": "2026-08-20T13:31:52.094351100Z"
 }

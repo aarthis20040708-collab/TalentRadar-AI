@@ -1,83 +1,78 @@
 import os
 import json
 import logging
+import re
+import urllib.request
 from typing import Dict, Any, List
-from pydantic import BaseModel, Field
 
 logger = logging.getLogger("TalentRadar.Parser")
 
-class ParsedJobSkills(BaseModel):
-    normalized_title: str
-    primary_skills: List[str] = Field(description="Primary programming languages and core libraries")
-    data_tools: List[str] = Field(description="Databases, ETL, or pipeline tools")
-    experience_level: str = Field(description="e.g., Fresher, Mid-Level, Senior")
-    salary_estimated_min: float = 0.0
-    salary_estimated_max: float = 0.0
-
 class GenAIJobParser:
     """
-    Parses unstructured job descriptions using Groq Cloud LLM (Llama-3-70B/8B)
-    with strict JSON fallback for offline or zero-token environments.
+    Parses unstructured job postings using Groq Cloud LLM
+    with resilient HTTP transport and deterministic regex fallback.
     """
     def __init__(self, api_key: str = None):
         self.api_key = api_key or os.getenv("GROQ_API_KEY")
-        self.client = None
-        if self.api_key:
-            try:
-                from groq import Groq
-                self.client = Groq(api_key=self.api_key)
-                logger.info("Groq LLM Client initialized successfully.")
-            except ImportError:
-                logger.warning("groq library not installed. Falling back to rule-based NLP extraction.")
 
     def parse_job_description(self, title: str, description: str) -> Dict[str, Any]:
         """
-        Extracts structured skill attributes and categorization from job text.
+        Extracts structured skill attributes and categorization from job text using Groq LLM.
         """
-        if self.client:
+        if self.api_key:
             try:
-                prompt = f"""
-                You are an expert AI & Data Engineering Recruiter and Data Analyst.
-                Analyze the following job posting and return ONLY a strict JSON object with this schema:
-                {{
-                  "normalized_title": "standardized job title",
-                  "primary_skills": ["list", "of", "languages", "frameworks"],
-                  "data_tools": ["databases", "vector_dbs", "orchestration_tools"],
-                  "experience_level": "Fresher (0-1 yrs) / Mid / Senior",
-                  "salary_estimated_min": 70000.0,
-                  "salary_estimated_max": 95000.0
-                }}
-
-                Job Title: {title}
-                Job Description: {description}
-                """
-                completion = self.client.chat.completions.create(
-                    model="llama3-8b-8192",
-                    messages=[
-                        {"role": "system", "content": "You extract structured talent metadata as JSON."},
+                url = "https://api.groq.com/openai/v1/chat/completions"
+                headers = {
+                    "Authorization": f"Bearer {self.api_key}",
+                    "Content-Type": "application/json",
+                    "User-Agent": "Mozilla/5.0"
+                }
+                prompt = (
+                    f"Job Title: {title}\n"
+                    f"Job Description: {description}\n\n"
+                    "Extract and return ONLY a valid JSON object matching this schema:\n"
+                    "{\n"
+                    '  "normalized_title": "string",\n'
+                    '  "primary_skills": ["Skill1", "Skill2"],\n'
+                    '  "data_tools": ["Tool1", "Tool2"],\n'
+                    '  "experience_level": "Fresher / Mid / Senior",\n'
+                    '  "salary_estimated_min": 75000,\n'
+                    '  "salary_estimated_max": 95000\n'
+                    "}"
+                )
+                payload = {
+                    "model": "qwen/qwen3.6-27b",
+                    "messages": [
+                        {"role": "system", "content": "You extract technical talent metadata. Output strictly valid JSON."},
                         {"role": "user", "content": prompt}
                     ],
-                    response_format={"type": "json_object"},
-                    temperature=0.1
-                )
-                parsed = json.loads(completion.choices[0].message.content)
-                logger.info(f"Successfully extracted skills for: {title} via Groq LLM.")
-                return parsed
+                    "temperature": 0.1
+                }
+                req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), headers=headers)
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    raw_content = data["choices"][0]["message"]["content"]
+                    clean_json = re.sub(r"<think>.*?</think>", "", raw_content, flags=re.DOTALL).strip()
+                    idx = clean_json.find("{")
+                    if idx != -1:
+                        obj, _ = json.JSONDecoder().raw_decode(clean_json[idx:])
+                        logger.info(f"Groq LLM parsed {title} successfully.")
+                        return obj
             except Exception as e:
-                logger.warning(f"Groq API call encountered exception: {e}. Utilizing deterministic extraction.")
+                logger.warning(f"Groq API live call fallback: {e}")
 
-        # Robust deterministic fallback
+        # Deterministic extraction fallback
         lower_desc = (title + " " + description).lower()
         extracted_skills = []
-        for kw in ["python", "fastapi", "asyncio", "sql", "postgresql", "pgvector", "qdrant", "pinecone", "langchain", "crewai", "docker", "airflow", "groq"]:
+        for kw in ["python", "fastapi", "asyncio", "sql", "postgresql", "pgvector", "xgboost", "scikit-learn", "langchain", "crewai", "docker", "airflow", "groq"]:
             if kw in lower_desc:
                 extracted_skills.append(kw.capitalize() if kw not in ["sql", "etl", "llm", "rag", "api"] else kw.upper())
 
         return {
             "normalized_title": title,
-            "primary_skills": extracted_skills or ["Python", "FastAPI", "PostgreSQL"],
+            "primary_skills": extracted_skills or ["Python", "Machine Learning", "FastAPI"],
             "data_tools": ["pgvector", "PostgreSQL", "GitHub Actions"],
-            "experience_level": "Fresher (0-1 yrs)" if "0" in lower_desc or "fresher" in lower_desc or "engineer" in lower_desc else "Mid-Senior",
+            "experience_level": "Fresher (0-1 yrs)" if ("0" in lower_desc or "fresher" in lower_desc or "junior" in lower_desc) else "Mid-Level",
             "salary_estimated_min": 75000.0,
             "salary_estimated_max": 95000.0
         }
