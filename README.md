@@ -149,7 +149,7 @@ Executes vector similarity search against PostgreSQL `pgvector` embeddings.
 ---
 
 ## 👤 Author
-**Aarthi S** — AI & Data Pipelines Engineer  
+**Aarthi S** — AI & Data Science Engineer  
 * B.Tech in Artificial Intelligence & Data Science, Panimalar Engineering College  
 * 📧 Email: [aarthi784197@gmail.com](mailto:aarthi784197@gmail.com)  
 * 💼 LinkedIn: [linkedin.com/in/s-aarthi-](https://www.linkedin.com/in/s-aarthi-)  
