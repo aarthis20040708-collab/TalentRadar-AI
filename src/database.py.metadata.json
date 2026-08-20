@@ -1,4 +1,4 @@
 {
-  "summary": "Database layer for PostgreSQL with pgvector support and fallback cache",
-  "updatedAt": "2026-08-20T07:26:42.063277400Z"
+  "summary": "Pre-seeded rich database for instant out-of-the-box working Streamlit and API demo",
+  "updatedAt": "2026-08-20T07:57:36.769723Z"
 }
